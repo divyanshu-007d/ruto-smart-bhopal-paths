@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { AlertCircle, Ambulance, Police } from "lucide-react";
+import { AlertCircle, Ambulance, Shield } from "lucide-react";
 
 const EmergencySection = () => {
   return (
@@ -41,7 +40,7 @@ const EmergencySection = () => {
               
               <div className="flex items-start">
                 <div className="flex-shrink-0 mt-1">
-                  <Police className="h-6 w-6 text-ruto-purple" />
+                  <Shield className="h-6 w-6 text-ruto-purple" />
                 </div>
                 <div className="ml-4">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Police Station Locator</h4>
