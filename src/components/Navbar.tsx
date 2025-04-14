@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Menu, X, MapPin, Moon, Sun } from "lucide-react";
+import UserProfile from "@/components/UserProfile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavbarProps {
   setDarkMode?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -11,6 +13,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ setDarkMode, darkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const toggleDarkMode = () => {
     if (setDarkMode) {
@@ -47,9 +50,14 @@ const Navbar: React.FC<NavbarProps> = ({ setDarkMode, darkMode }) => {
             <Button variant="outline" onClick={toggleDarkMode} size="icon">
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
-            <Button className="bg-ruto-purple hover:bg-ruto-lightPurple" asChild>
-              <Link to="/map">Get Started</Link>
-            </Button>
+            
+            {user ? (
+              <UserProfile />
+            ) : (
+              <Button className="bg-ruto-purple hover:bg-ruto-lightPurple" asChild>
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -57,10 +65,12 @@ const Navbar: React.FC<NavbarProps> = ({ setDarkMode, darkMode }) => {
             <Button variant="outline" onClick={toggleDarkMode} size="icon" className="mr-2">
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
+            {user && <UserProfile />}
             <Button
               variant="outline"
               size="icon"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="ml-2"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -86,9 +96,11 @@ const Navbar: React.FC<NavbarProps> = ({ setDarkMode, darkMode }) => {
             >
               Launch App
             </Link>
-            <Button className="bg-ruto-purple hover:bg-ruto-lightPurple w-full" asChild>
-              <Link to="/map">Get Started</Link>
-            </Button>
+            {!user && (
+              <Button className="bg-ruto-purple hover:bg-ruto-lightPurple w-full" asChild>
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            )}
           </div>
         </div>
       )}
