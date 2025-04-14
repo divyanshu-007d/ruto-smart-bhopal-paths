@@ -4,6 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Loader } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Define the Google Maps window interface
+declare global {
+  interface Window {
+    initMap: () => void;
+    google: typeof google;
+  }
+}
+
 const MapContainer = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -44,7 +52,7 @@ const MapContainer = () => {
       // Default to Bhopal coordinates
       const bhopal = { lat: 23.2599, lng: 77.4126 };
       
-      const mapInstance = new google.maps.Map(mapRef.current, {
+      const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: bhopal,
         zoom: 12,
         mapTypeControl: true,
@@ -54,11 +62,11 @@ const MapContainer = () => {
       });
       
       // Add a marker for current location
-      new google.maps.Marker({
+      new window.google.maps.Marker({
         position: bhopal,
         map: mapInstance,
         title: "Bhopal",
-        animation: google.maps.Animation.DROP,
+        animation: window.google.maps.Animation.DROP,
       });
       
       setMap(mapInstance);
@@ -91,10 +99,3 @@ const MapContainer = () => {
 };
 
 export default MapContainer;
-
-// Add the type definition for the Google Maps callback
-declare global {
-  interface Window {
-    initMap: () => void;
-  }
-}
