@@ -31,6 +31,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_OUT') {
           navigate('/');
         }
+        
+        // If user logs in, redirect to map
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          navigate('/map');
+        }
       }
     );
 
