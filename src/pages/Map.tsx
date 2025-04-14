@@ -1,13 +1,9 @@
 
 import { useState, useEffect } from "react";
-import Hero from "@/components/Hero";
-import Features from "@/components/Features";
-import EmergencySection from "@/components/EmergencySection";
-import CTASection from "@/components/CTASection";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import MapContainer from "@/components/MapContainer";
 
-const Index = () => {
+const Map = () => {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -26,15 +22,11 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-ruto-dark">
+    <div className="h-screen flex flex-col bg-white dark:bg-ruto-dark">
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <Hero />
-      <Features />
-      <EmergencySection />
-      <CTASection />
-      <Footer />
+      <MapContainer />
     </div>
   );
 };
 
-export default Index;
+export default Map;
