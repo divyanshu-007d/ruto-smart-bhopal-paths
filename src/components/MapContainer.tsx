@@ -59,7 +59,10 @@ const MapContainer = () => {
   useEffect(() => {
     // Load Google Maps API
     const loadGoogleMaps = () => {
-      const googleMapsApiKey = "AIzaSyDHQbOpELbshQTBAkoAqxwOYtHNu3rcaeI";
+      // const googleMapsApiKey = "AIzaSyDHQbOpELbshQTBAkoAqxwOYtHNu3rcaeI";
+     const googleMapsApiKey = "AIzaSyCSuBIGzuEEfadroPSJf-nJbDjjoScrSNo"; 
+      
+      
       const script = document.createElement("script");
       
       window.initMap = () => {
@@ -91,6 +94,33 @@ const MapContainer = () => {
       // Default to Bhopal coordinates
       const bhopal = { lat: 23.2599, lng: 77.4126 };
       
+      // Add custom map styles to highlight emergency services and hide other buildings
+      const mapStyles = [
+        {
+          featureType: "poi",
+          elementType: "labels.icon",
+          stylers: [{ visibility: "off" }]
+        },
+        {
+          featureType: "poi.medical",
+          elementType: "geometry",
+          stylers: [{ visibility: "on" }, { color: "#ffcdd2" }]  // Light red for hospitals
+        },
+        {
+          featureType: "poi.government",
+          elementType: "geometry",
+          stylers: [{ visibility: "on" }, { color: "#bbdefb" }]  // Light blue for government buildings
+        },
+        {
+          featureType: "poi.business",
+          stylers: [{ visibility: "off" }]
+        },
+        {
+          featureType: "poi.school",
+          stylers: [{ visibility: "off" }]
+        }
+      ];
+      
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: bhopal,
         zoom: 12,
@@ -98,6 +128,7 @@ const MapContainer = () => {
         fullscreenControl: true,
         streetViewControl: false,
         zoomControl: true,
+        styles: mode === "emergency" ? mapStyles : []
       });
       
       // Add directions renderer
@@ -163,7 +194,7 @@ const MapContainer = () => {
         );
       }
     }
-  }, [mapLoaded, mapRef, map]);
+  }, [mapLoaded, mapRef, map, mode]);
   
   // Check for URL parameters
   useEffect(() => {
@@ -182,91 +213,140 @@ const MapContainer = () => {
     clearMarkers();
     
     if (mode === "emergency") {
-      showEmergencyLocations();
+      // Apply emergency styling to the map
+      map.setOptions({
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "poi.medical",
+            elementType: "geometry",
+            stylers: [{ visibility: "on" }, { color: "#ffcdd2" }]  // Light red for hospitals
+          },
+          {
+            featureType: "poi.government",
+            elementType: "geometry",
+            stylers: [{ visibility: "on" }, { color: "#bbdefb" }]  // Light blue for government buildings
+          },
+          {
+            featureType: "poi.business",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "poi.school",
+            stylers: [{ visibility: "off" }]
+          }
+        ]
+      });
+      
+      // Also fetch and show nearby hospitals and police stations from Places API
+      fetchNearbyEmergencyServices();
     } else if (mode === "weather") {
+      // Reset map styling
+      map.setOptions({ styles: [] });
       fetchWeatherData();
-    }
-  }, [map, mapLoaded, mode, emergencyType, clearMarkers]);
-  
-  // Simulate fetching emergency locations
-  const showEmergencyLocations = () => {
-    if (!map) return;
-    
-    // Simulated emergency locations in Bhopal
-    const emergencyLocations = {
-      hospitals: [
-        { name: "Hamidia Hospital", lat: 23.2611, lng: 77.3961, type: "hospitals" },
-        { name: "AIIMS Bhopal", lat: 23.2071, lng: 77.4629, type: "hospitals" },
-        { name: "Bansal Hospital", lat: 23.2200, lng: 77.4412, type: "hospitals" },
-        { name: "People's Hospital", lat: 23.2314, lng: 77.4296, type: "hospitals" }
-      ],
-      police: [
-        { name: "MP Nagar Police Station", lat: 23.2310, lng: 77.4345, type: "police" },
-        { name: "Habibganj Police Station", lat: 23.1939, lng: 77.4379, type: "police" },
-        { name: "TT Nagar Police Station", lat: 23.2567, lng: 77.4046, type: "police" },
-        { name: "Shahpura Police Station", lat: 23.2012, lng: 77.4573, type: "police" }
-      ]
-    };
-    
-    // Filter locations based on emergency type
-    let locationsToShow = [];
-    if (emergencyType === "hospitals") {
-      locationsToShow = emergencyLocations.hospitals;
-    } else if (emergencyType === "police") {
-      locationsToShow = emergencyLocations.police;
     } else {
-      locationsToShow = [...emergencyLocations.hospitals, ...emergencyLocations.police];
+      // Reset map styling for navigation mode
+      map.setOptions({ styles: [] });
     }
+  }, [map, mapLoaded, mode, clearMarkers]);
+  
+  // New function to fetch nearby emergency services using Places API
+  const fetchNearbyEmergencyServices = () => {
+    if (!map) return;
     
     const bounds = new window.google.maps.LatLngBounds();
     const newMarkers: google.maps.Marker[] = [];
     
-    // Add markers for emergency locations
-    locationsToShow.forEach(location => {
-      const position = new window.google.maps.LatLng(location.lat, location.lng);
-      bounds.extend(position);
-      
-      const icon = {
-        url: location.type === "hospitals" 
-          ? "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-          : "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-        scaledSize: new window.google.maps.Size(40, 40)
+    // Function to search for nearby places by type
+    const searchNearbyPlaces = (type: string, iconColor: string) => {
+      const request = {
+        location: map.getCenter(),
+        radius: 10000, // 10km radius
+        type: type
       };
       
-      const marker = new window.google.maps.Marker({
-        position,
-        map,
-        title: location.name,
-        animation: window.google.maps.Animation.DROP,
-        icon
-      });
+      const placesService = new window.google.maps.places.PlacesService(map);
       
-      // Add click event to get directions
-      marker.addListener("click", () => {
-        if (userLocation) {
-          getDirections(userLocation, position, location.name);
-        } else {
-          toast.error("Your location is not available", {
-            description: "Please enable location services"
+      placesService.nearbySearch(request, (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          results.forEach(place => {
+            if (place.geometry && place.geometry.location) {
+              bounds.extend(place.geometry.location);
+              
+              const marker = new window.google.maps.Marker({
+                position: place.geometry.location,
+                map,
+                title: place.name,
+                animation: window.google.maps.Animation.DROP,
+                icon: {
+                  url: `https://maps.google.com/mapfiles/ms/icons/${iconColor}-dot.png`,
+                  scaledSize: new window.google.maps.Size(40, 40)
+                }
+              });
+              
+              // Add click event to get directions
+              marker.addListener("click", () => {
+                if (userLocation) {
+                  getDirections(userLocation, place.geometry.location, place.name!);
+                } else {
+                  toast.error("Your location is not available", {
+                    description: "Please enable location services"
+                  });
+                }
+              });
+              
+              // Create info window
+              const infoWindow = new window.google.maps.InfoWindow({
+                content: `
+                  <div style="padding: 8px; max-width: 200px;">
+                    <strong>${place.name}</strong><br/>
+                    ${place.vicinity || ""}
+                  </div>
+                `
+              });
+              
+              marker.addListener("click", () => {
+                infoWindow.open(map, marker);
+              });
+              
+              newMarkers.push(marker);
+            }
           });
+          
+          setMarkers(prev => [...prev, ...newMarkers]);
+          
+          // Adjust map to fit all markers
+          if (newMarkers.length > 0) {
+            map.fitBounds(bounds);
+          }
         }
       });
-      
-      newMarkers.push(marker);
-    });
+    };
     
-    setMarkers(newMarkers);
-    
-    // Adjust map to fit all markers
-    if (newMarkers.length > 0) {
-      map.fitBounds(bounds);
+    // Search for hospitals and police stations based on emergency type
+    if (emergencyType === "hospitals" || emergencyType === "all") {
+      searchNearbyPlaces("hospital", "red");
     }
     
-    // Show info toast
+    if (emergencyType === "police" || emergencyType === "all") {
+      searchNearbyPlaces("police", "blue");
+    }
+    
+    // Show info toast - only show once per fetch
     toast.info(`Showing ${emergencyType === "all" ? "all emergency" : emergencyType} locations`, {
-      description: "Click on a marker to get directions"
+      description: "Click on a marker to get directions",
+      id: `emergency-toast-${emergencyType}`, // Add an ID to prevent duplicate toasts
     });
   };
+  
+  // Comment out or remove the old showEmergencyLocations function since we're replacing it
+  // const showEmergencyLocations = () => {
+  //   // ... existing code ...
+  // };
   
   // Simulate fetching weather data
   const fetchWeatherData = async () => {
